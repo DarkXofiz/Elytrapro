@@ -6,14 +6,15 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
 public final class AutoElytra {
-    private static final int REOPEN_WINDOW = 60;   // ticks after the last glide tick in which wings are re-opened
-    private static final int MAX_REOPENS = 12;     // safety: stop if the server keeps closing the wings
+    private static final int REOPEN_WINDOW = 60;
+    private static final int MAX_REOPENS = 12;
 
     private static int airTicks;
     private static int sinceAttempt = 1000;
     private static int recentGlide;
     private static int glideTicks;
     private static int reopens;
+    private static boolean attemptedThisPress;
 
     private AutoElytra() {}
 
@@ -23,10 +24,13 @@ public final class AutoElytra {
         ElytraProConfig cfg = ElytraProConfig.get();
         if (p == null || mc.world == null) { reset(); return; }
 
-        // pending "rocket + take off" request from a right click
+        // queued "take off + rocket" from a right click on a trigger block
         AutoFirework.tick(mc);
 
         if (!cfg.autoElytra) return;
+
+        boolean jump = mc.options.jumpKey.isPressed() && mc.currentScreen == null;
+        if (!jump) attemptedThisPress = false;
 
         if (p.isOnGround() || p.isTouchingWater()) {
             airTicks = 0;
@@ -39,21 +43,28 @@ public final class AutoElytra {
 
         if (p.isFallFlying()) {
             recentGlide = REOPEN_WINDOW;
-            if (++glideTicks >= 10) reopens = 0; // stable flight -> allow future re-opens
+            if (++glideTicks >= 10) reopens = 0;
             return;
         }
         glideTicks = 0;
         if (recentGlide > 0) recentGlide--;
 
-        if (mc.currentScreen != null) return;
+        // Inside a cobweb: open ONCE per space press, never retry, never auto re-open.
+        // (Retrying every few ticks is what made the wings open/close/open/close.)
+        if (ElytraUtil.inCobweb(p)) {
+            if (!jump || attemptedThisPress) return;
+            if (!ElytraUtil.canStartNow(p)) return; // wait (same press) until airborne
+            attemptedThisPress = true;
+            ElytraUtil.tryStartGliding(p);
+            return;
+        }
 
-        boolean jumpHeld = mc.options.jumpKey.isPressed();
         boolean keepOpen = cfg.keepOpen && recentGlide > 0 && reopens < MAX_REOPENS;
-        if (!jumpHeld && !keepOpen) return;
+        if (!jump && !keepOpen) return;
         if (airTicks < cfg.minAirTicks || sinceAttempt < cfg.retryDelayTicks) return;
 
         sinceAttempt = 0;
-        if (ElytraUtil.tryStartGliding(p) && !jumpHeld) reopens++;
+        if (ElytraUtil.tryStartGliding(p) && !jump) reopens++;
     }
 
     private static void reset() {
@@ -61,5 +72,6 @@ public final class AutoElytra {
         recentGlide = 0;
         glideTicks = 0;
         reopens = 0;
+        attemptedThisPress = false;
     }
 }

@@ -6,11 +6,14 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 
 public final class AutoFirework {
@@ -23,25 +26,32 @@ public final class AutoFirework {
     private AutoFirework() {}
 
     /**
-     * Called when the right-click key is processed. Returns true if the click
-     * was consumed by Auto Firework (vanilla handling is then cancelled).
-     * Works regardless of what is under the crosshair (block, entity, player, air).
+     * Called when the right-click key is processed. Returns true only when the
+     * click is consumed by the mod. That happens ONLY when the crosshair is on an
+     * already placed trigger BLOCK (logs, planks, cobweb by default).
+     * Everything else (placing blocks, firework in hand, other blocks) stays vanilla.
      */
     public static boolean tryUse(MinecraftClient mc) {
         ClientPlayerEntity p = mc.player;
         ElytraProConfig cfg = ElytraProConfig.get();
         if (!cfg.autoFirework || p == null || mc.world == null || mc.interactionManager == null) return false;
         if (p.isSpectator() || p.isSneaking() || p.hasVehicle()) return false;
-        if (!cfg.isTrigger(p.getMainHandStack())) return false;
-        if (!ElytraUtil.hasUsableElytra(p)) return false;
 
+        // 1) must be looking at a placed trigger block
+        if (!(mc.crosshairTarget instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return false;
+        if (!cfg.isTriggerBlock(mc.world.getBlockState(hit.getBlockPos()))) return false;
+
+        // 2) holding a block => the player wants to place it, stay vanilla
+        if (!cfg.triggerWithBlockInHand && p.getMainHandStack().getItem() instanceof BlockItem) return false;
+
+        if (!ElytraUtil.hasUsableElytra(p)) return false;
         int slot = findFirework(p);
         if (slot == -2) return false;
 
         long now = mc.world.getTime();
         if (now - lastUse < cfg.cooldownTicks) return true;
 
-        // Already gliding: fire immediately.
+        // already gliding: fire at once
         if (p.isFallFlying()) {
             if (cfg.skipIfBoosting && now < boostUntil) return true;
             fire(mc, p, slot, now);
@@ -50,7 +60,7 @@ public final class AutoFirework {
 
         if (p.isTouchingWater() || p.hasStatusEffect(StatusEffects.LEVITATION)) return false;
 
-        // On the ground: jump, then open wings + fire as soon as the server accepts it.
+        // on the ground: jump, then open wings + fire when the server will accept it
         if (p.isOnGround()) {
             if (!cfg.launchFromGround) return false;
             double jump = 0.42;
@@ -62,15 +72,11 @@ public final class AutoFirework {
             return true;
         }
 
-        // In the air: open wings and fire in the same tick if possible.
+        // in the air: open wings and fire in the same tick
         if (ElytraUtil.canStartNow(p)) {
-            if (ElytraUtil.tryStartGliding(p)) {
-                fire(mc, p, slot, now);
-            }
+            if (ElytraUtil.tryStartGliding(p)) fire(mc, p, slot, now);
             return true;
         }
-
-        // In the air but still rising: wait for the first valid tick (the click is not lost).
         pending = PENDING_TICKS;
         return true;
     }
@@ -92,7 +98,7 @@ public final class AutoFirework {
             pending = 0;
             return;
         }
-        if (!ElytraUtil.canStartNow(p)) return; // still on the ground / still rising
+        if (!ElytraUtil.canStartNow(p)) return;
         if (ElytraUtil.tryStartGliding(p)) fire(mc, p, slot, now);
         pending = 0;
     }

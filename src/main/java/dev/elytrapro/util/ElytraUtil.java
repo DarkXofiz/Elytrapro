@@ -1,5 +1,6 @@
 package dev.elytrapro.util;
 
+import dev.elytrapro.config.ElytraProConfig;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -28,21 +29,17 @@ public final class ElytraUtil {
                 || mc.world.getBlockState(pos.up()).isOf(Blocks.COBWEB);
     }
 
-    /**
-     * The server only accepts "start gliding" when the player is airborne AND
-     * moving downwards (velocity.y < 0). If we send it while still rising, the
-     * server answers with stopFallFlying() and the wings snap shut. That was the
-     * reason the wings "did not open / closed again". So we only send it when
-     * the server will accept it.
-     * Inside a cobweb vanilla zeroes the velocity every tick, so the check is skipped there.
-     */
+    /** Same conditions vanilla uses before it sends "start gliding". */
     public static boolean canStartNow(ClientPlayerEntity p) {
         if (p.isFallFlying() || p.isOnGround() || p.hasVehicle() || p.isClimbing()
                 || p.getAbilities().flying || p.isSpectator() || p.isTouchingWater()
                 || p.hasStatusEffect(StatusEffects.LEVITATION) || !hasUsableElytra(p)) {
             return false;
         }
-        return p.getVelocity().y < 0.0 || inCobweb(p);
+        if (ElytraProConfig.get().onlyWhenFalling && !inCobweb(p)) {
+            return p.getVelocity().y < 0.0;
+        }
+        return true;
     }
 
     /** Starts gliding exactly like vanilla does (local state + server packet). */
