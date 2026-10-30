@@ -27,8 +27,8 @@ public final class AutoFirework {
 
     /**
      * Called when the right-click key is processed. Returns true only when the
-     * click is consumed by the mod. That happens ONLY when the crosshair is on an
-     * already placed trigger BLOCK (logs, planks, cobweb by default).
+     * click is consumed by the mod. That happens ONLY when you are inside a cobweb
+     * or the crosshair is on an already placed trigger BLOCK (logs, planks, cobweb, bedrock).
      * Everything else (placing blocks, firework in hand, other blocks) stays vanilla.
      */
     public static boolean tryUse(MinecraftClient mc) {
@@ -37,9 +37,12 @@ public final class AutoFirework {
         if (!cfg.autoFirework || p == null || mc.world == null || mc.interactionManager == null) return false;
         if (p.isSpectator() || p.isSneaking() || p.hasVehicle()) return false;
 
-        // 1) must be looking at a placed trigger block
-        if (!(mc.crosshairTarget instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return false;
-        if (!cfg.isTriggerBlock(mc.world.getBlockState(hit.getBlockPos()))) return false;
+        // 1) trigger: standing inside a cobweb, OR looking at a placed trigger block
+        boolean inWeb = cfg.launchInsideCobweb && ElytraUtil.inCobweb(p);
+        boolean onTriggerBlock = mc.crosshairTarget instanceof BlockHitResult hit
+                && hit.getType() == HitResult.Type.BLOCK
+                && cfg.isTriggerBlock(mc.world.getBlockState(hit.getBlockPos()));
+        if (!inWeb && !onTriggerBlock) return false;
 
         // 2) holding a block => the player wants to place it, stay vanilla
         if (!cfg.triggerWithBlockInHand && p.getMainHandStack().getItem() instanceof BlockItem) return false;

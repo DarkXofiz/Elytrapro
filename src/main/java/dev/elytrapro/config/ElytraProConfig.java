@@ -25,7 +25,7 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
-    private static final int CONFIG_VERSION = 3;
+    private static final int CONFIG_VERSION = 4;
 
     /** Old config files are reset once so the new defaults take effect. */
     public int configVersion; // 0 when missing in an old file
@@ -45,11 +45,13 @@ public final class ElytraProConfig {
     public int retryDelayTicks = 2;
     /** Only try to open wings when moving downwards (older server rule). Off = open instantly. */
     public boolean onlyWhenFalling = false;
+    /** Right click while standing inside a cobweb launches you (any crosshair target). */
+    public boolean launchInsideCobweb = true;
     /** If false, right click with a block in hand always places the block (vanilla). */
     public boolean triggerWithBlockInHand = false;
     /** PLACED blocks that launch you when you right-click them. */
     public List<String> triggerBlockTags = List.of("minecraft:logs", "minecraft:planks");
-    public List<String> triggerBlocks = List.of("minecraft:cobweb");
+    public List<String> triggerBlocks = List.of("minecraft:cobweb", "minecraft:bedrock");
 
     private transient Set<Block> resolvedBlocks;
     private transient List<TagKey<Block>> resolvedTags;
