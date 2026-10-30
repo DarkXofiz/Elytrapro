@@ -25,16 +25,24 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
+    private static final int CONFIG_VERSION = 2;
+
+    /** Old config files are reset once so the new defaults take effect. */
+    public int configVersion; // 0 when missing in an old file
     public boolean autoFirework = true;
     public boolean autoElytra = true;
+    /** Re-open the wings automatically if they close mid-air (no need to hold jump). */
+    public boolean keepOpen = true;
+    /** Right click with a trigger item on the ground: jump, open wings and fire. */
+    public boolean launchFromGround = true;
     /** Minimum ticks between two automatic firework uses. */
     public int cooldownTicks = 10;
     /** Do not use another rocket while one launched by the player is still active. */
     public boolean skipIfBoosting = true;
     /** Ticks in the air (jump held) before Elytra opens. */
-    public int minAirTicks = 2;
+    public int minAirTicks = 0;
     /** Ticks between Elytra open attempts (prevents packet spam if server refuses). */
-    public int retryDelayTicks = 5;
+    public int retryDelayTicks = 2;
     public List<String> triggerTags = List.of("minecraft:logs", "minecraft:planks");
     public List<String> triggerItems = List.of("minecraft:cobweb");
 
@@ -56,8 +64,13 @@ public final class ElytraProConfig {
                 ElytraProClient.LOGGER.error("Could not read elytrapro.json, using defaults", e);
             }
         }
-        if (cfg == null) {
+        boolean write = false;
+        if (cfg == null || cfg.configVersion < CONFIG_VERSION) {
             cfg = new ElytraProConfig();
+            cfg.configVersion = CONFIG_VERSION;
+            write = true;
+        }
+        if (write) {
             try (Writer w = Files.newBufferedWriter(path)) {
                 GSON.toJson(cfg, w);
             } catch (IOException e) {

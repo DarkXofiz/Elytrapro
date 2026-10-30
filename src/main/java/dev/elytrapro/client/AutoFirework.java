@@ -4,14 +4,21 @@ import dev.elytrapro.config.ElytraProConfig;
 import dev.elytrapro.util.ElytraUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.projectile.FireworkRocketEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.Vec3d;
 
 public final class AutoFirework {
+    private static final int PENDING_TICKS = 40;
+
     private static long lastUse = Long.MIN_VALUE / 2;
+    private static long boostUntil = Long.MIN_VALUE / 2;
+    private static int pending;
 
     private AutoFirework() {}
 
@@ -27,22 +34,67 @@ public final class AutoFirework {
         if (p.isSpectator() || p.isSneaking() || p.hasVehicle()) return false;
         if (!cfg.isTrigger(p.getMainHandStack())) return false;
         if (!ElytraUtil.hasUsableElytra(p)) return false;
-        // Rockets only help in the air; never waste them on the ground.
-        if (!p.isFallFlying() && p.isOnGround()) return false;
 
         int slot = findFirework(p);
         if (slot == -2) return false;
 
         long now = mc.world.getTime();
         if (now - lastUse < cfg.cooldownTicks) return true;
-        if (cfg.skipIfBoosting && p.isFallFlying() && hasActiveRocket(mc, p)) return true;
 
-        // Open the wings first so the rocket takes effect in the same tick.
-        if (!p.isFallFlying() && !ElytraUtil.tryStartGliding(p)) return false;
+        // Already gliding: fire immediately.
+        if (p.isFallFlying()) {
+            if (cfg.skipIfBoosting && now < boostUntil) return true;
+            fire(mc, p, slot, now);
+            return true;
+        }
 
-        lastUse = now;
-        use(mc, p, slot);
+        if (p.isTouchingWater() || p.hasStatusEffect(StatusEffects.LEVITATION)) return false;
+
+        // On the ground: jump, then open wings + fire as soon as the server accepts it.
+        if (p.isOnGround()) {
+            if (!cfg.launchFromGround) return false;
+            double jump = 0.42;
+            StatusEffectInstance boost = p.getStatusEffect(StatusEffects.JUMP_BOOST);
+            if (boost != null) jump += 0.1 * (boost.getAmplifier() + 1);
+            Vec3d v = p.getVelocity();
+            p.setVelocity(v.x, Math.max(v.y, jump), v.z);
+            pending = PENDING_TICKS;
+            return true;
+        }
+
+        // In the air: open wings and fire in the same tick if possible.
+        if (ElytraUtil.canStartNow(p)) {
+            if (ElytraUtil.tryStartGliding(p)) {
+                fire(mc, p, slot, now);
+            }
+            return true;
+        }
+
+        // In the air but still rising: wait for the first valid tick (the click is not lost).
+        pending = PENDING_TICKS;
         return true;
+    }
+
+    /** Called every client tick; finishes a queued take-off. */
+    public static void tick(MinecraftClient mc) {
+        if (pending <= 0) return;
+        ClientPlayerEntity p = mc.player;
+        if (p == null || mc.world == null || mc.interactionManager == null) { pending = 0; return; }
+        pending--;
+        if (p.hasVehicle() || p.isTouchingWater() || p.isSpectator()) { pending = 0; return; }
+
+        int slot = findFirework(p);
+        if (slot == -2) { pending = 0; return; }
+        long now = mc.world.getTime();
+
+        if (p.isFallFlying()) {
+            if (now - lastUse >= ElytraProConfig.get().cooldownTicks) fire(mc, p, slot, now);
+            pending = 0;
+            return;
+        }
+        if (!ElytraUtil.canStartNow(p)) return; // still on the ground / still rising
+        if (ElytraUtil.tryStartGliding(p)) fire(mc, p, slot, now);
+        pending = 0;
     }
 
     /** -1 = offhand, 0..8 = hotbar slot, -2 = none. */
@@ -55,9 +107,13 @@ public final class AutoFirework {
         return -2;
     }
 
-    private static boolean hasActiveRocket(MinecraftClient mc, ClientPlayerEntity p) {
-        return !mc.world.getEntitiesByClass(FireworkRocketEntity.class,
-                p.getBoundingBox().expand(3.0), e -> e.isAlive()).isEmpty();
+    private static void fire(MinecraftClient mc, ClientPlayerEntity p, int slot, long now) {
+        ItemStack stack = slot == -1 ? p.getOffHandStack() : p.getInventory().getStack(slot);
+        NbtCompound tag = stack.getSubNbt("Fireworks");
+        int flight = tag != null && tag.contains("Flight") ? tag.getByte("Flight") : 1;
+        lastUse = now;
+        boostUntil = now + 10L * Math.max(1, flight) + 6;
+        use(mc, p, slot);
     }
 
     private static void use(MinecraftClient mc, ClientPlayerEntity p, int slot) {
