@@ -48,8 +48,9 @@ public final class AutoFirework {
         if (!cfg.triggerWithBlockInHand && p.getMainHandStack().getItem() instanceof BlockItem) return false;
 
         if (!ElytraUtil.hasUsableElytra(p)) return false;
-        int slot = findFirework(p);
-        if (slot == -2) return false;
+        // 3) a rocket MUST be in the main hand or off hand (nothing is taken from the hotbar)
+        Hand hand = findHand(p);
+        if (hand == null) return false;
 
         long now = mc.world.getTime();
         if (now - lastUse < cfg.cooldownTicks) return true;
@@ -57,7 +58,7 @@ public final class AutoFirework {
         // already gliding: fire at once
         if (p.isFallFlying()) {
             if (cfg.skipIfBoosting && now < boostUntil) return true;
-            fire(mc, p, slot, now);
+            fire(mc, p, hand, now);
             return true;
         }
 
@@ -77,7 +78,7 @@ public final class AutoFirework {
 
         // in the air: open wings and fire in the same tick
         if (ElytraUtil.canStartNow(p)) {
-            if (ElytraUtil.tryStartGliding(p)) fire(mc, p, slot, now);
+            if (ElytraUtil.tryStartGliding(p)) fire(mc, p, hand, now);
             return true;
         }
         pending = PENDING_TICKS;
@@ -92,53 +93,34 @@ public final class AutoFirework {
         pending--;
         if (p.hasVehicle() || p.isTouchingWater() || p.isSpectator()) { pending = 0; return; }
 
-        int slot = findFirework(p);
-        if (slot == -2) { pending = 0; return; }
+        Hand hand = findHand(p);
+        if (hand == null) { pending = 0; return; }
         long now = mc.world.getTime();
 
         if (p.isFallFlying()) {
-            if (now - lastUse >= ElytraProConfig.get().cooldownTicks) fire(mc, p, slot, now);
+            if (now - lastUse >= ElytraProConfig.get().cooldownTicks) fire(mc, p, hand, now);
             pending = 0;
             return;
         }
         if (!ElytraUtil.canStartNow(p)) return;
-        if (ElytraUtil.tryStartGliding(p)) fire(mc, p, slot, now);
+        if (ElytraUtil.tryStartGliding(p)) fire(mc, p, hand, now);
         pending = 0;
     }
 
-    /** -1 = offhand, 0..8 = hotbar slot, -2 = none. */
-    private static int findFirework(ClientPlayerEntity p) {
-        if (p.getOffHandStack().isOf(Items.FIREWORK_ROCKET)) return -1;
-        for (int i = 0; i < 9; i++) {
-            ItemStack s = p.getInventory().getStack(i);
-            if (s.isOf(Items.FIREWORK_ROCKET)) return i;
-        }
-        return -2;
+    /** The hand that holds a firework rocket (main hand first), or null. */
+    private static Hand findHand(ClientPlayerEntity p) {
+        if (p.getMainHandStack().isOf(Items.FIREWORK_ROCKET)) return Hand.MAIN_HAND;
+        if (p.getOffHandStack().isOf(Items.FIREWORK_ROCKET)) return Hand.OFF_HAND;
+        return null;
     }
 
-    private static void fire(MinecraftClient mc, ClientPlayerEntity p, int slot, long now) {
-        ItemStack stack = slot == -1 ? p.getOffHandStack() : p.getInventory().getStack(slot);
+    private static void fire(MinecraftClient mc, ClientPlayerEntity p, Hand hand, long now) {
+        ItemStack stack = p.getStackInHand(hand);
         NbtCompound tag = stack.getSubNbt("Fireworks");
         int flight = tag != null && tag.contains("Flight") ? tag.getByte("Flight") : 1;
         lastUse = now;
         boostUntil = now + 10L * Math.max(1, flight) + 6;
-        use(mc, p, slot);
-    }
-
-    private static void use(MinecraftClient mc, ClientPlayerEntity p, int slot) {
-        Hand hand;
-        int previous = p.getInventory().selectedSlot;
-        if (slot == -1) {
-            hand = Hand.OFF_HAND;
-        } else {
-            hand = Hand.MAIN_HAND;
-            p.getInventory().selectedSlot = slot;
-        }
-        try {
-            ActionResult r = mc.interactionManager.interactItem(p, hand);
-            if (r.shouldSwingHand()) p.swingHand(hand);
-        } finally {
-            p.getInventory().selectedSlot = previous;
-        }
+        ActionResult r = mc.interactionManager.interactItem(p, hand);
+        if (r.shouldSwingHand()) p.swingHand(hand);
     }
 }

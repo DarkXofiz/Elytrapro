@@ -25,15 +25,13 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
-    private static final int CONFIG_VERSION = 4;
+    private static final int CONFIG_VERSION = 5;
 
     /** Old config files are reset once so the new defaults take effect. */
     public int configVersion; // 0 when missing in an old file
     public boolean autoFirework = true;
     public boolean autoElytra = true;
-    /** Re-open the wings automatically if they close mid-air (no need to hold jump). */
-    public boolean keepOpen = true;
-    /** Right click with a trigger item on the ground: jump, open wings and fire. */
+    /** Right click (rocket in hand) on the ground: jump, open wings and fire. */
     public boolean launchFromGround = true;
     /** Minimum ticks between two automatic firework uses. */
     public int cooldownTicks = 10;
@@ -41,8 +39,6 @@ public final class ElytraProConfig {
     public boolean skipIfBoosting = true;
     /** Ticks in the air (jump held) before Elytra opens. */
     public int minAirTicks = 0;
-    /** Ticks between Elytra open attempts (prevents packet spam if server refuses). */
-    public int retryDelayTicks = 2;
     /** Only try to open wings when moving downwards (older server rule). Off = open instantly. */
     public boolean onlyWhenFalling = false;
     /** Right click while standing inside a cobweb launches you (any crosshair target). */
@@ -86,7 +82,6 @@ public final class ElytraProConfig {
         }
         cfg.cooldownTicks = Math.max(0, cfg.cooldownTicks);
         cfg.minAirTicks = Math.max(0, cfg.minAirTicks);
-        cfg.retryDelayTicks = Math.max(1, cfg.retryDelayTicks);
         if (cfg.triggerBlockTags == null) cfg.triggerBlockTags = List.of();
         if (cfg.triggerBlocks == null) cfg.triggerBlocks = List.of();
         return cfg;

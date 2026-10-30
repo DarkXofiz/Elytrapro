@@ -3,16 +3,14 @@
 Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x builds). Java 17.
 
 ## Features
-**Auto Firework (placed blocks only)**
-- Right-click an already **placed** log / planks / cobweb / bedrock block, **or right-click anywhere while standing inside a cobweb** (`launchInsideCobweb`): a firework rocket (offhand or hotbar) is fired and you take off.
+**Auto Firework**
+- Works ONLY while a firework rocket is in your main hand or off hand. Without a rocket in hand (or with any other item) nothing happens and everything stays vanilla. Rockets are never taken from the hotbar.
+- With a rocket in hand, right-click an already **placed** log / planks / cobweb / bedrock block, or right-click anywhere while standing inside a cobweb (`launchInsideCobweb`): you take off with the rocket.
 - Already gliding: rocket at once. In the air: wings open + rocket in the same tick. On the ground (`launchFromGround`): you jump, then wings open and the rocket fires.
-- Items do nothing special: you can place blocks normally. A block in hand = vanilla placement (`triggerWithBlockInHand` changes that). A rocket in hand and every other block behave like vanilla.
-- Never while sneaking, has a cooldown, skips if a rocket is still boosting you.
+- Never while sneaking, has a cooldown, skips if a rocket is still boosting you. A block in the main hand = vanilla placement (`triggerWithBlockInHand` changes that).
 
 **Auto Elytra**
-- Hold/press jump in the air: Elytra opens (no delay, no waiting for falling).
-- Inside a cobweb: wings open **once per space press**. No retry loop, no auto re-open (that loop caused the open/close flicker).
-- Outside webs `keepOpen` re-opens the wings if they drop mid-air.
+- Press jump in the air: Elytra opens ONE time per press. No retries, no packet spam, no automatic re-open. Press again to open again.
 - The server can still close wings (ground contact, water, anti-cheat). The client cannot override that.
 
 ## Install
@@ -24,12 +22,12 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 gradle wrapper --gradle-version 8.8   # once, creates gradle-wrapper.jar
 ./gradlew build                        # Windows: gradlew.bat build
 ```
-Output: `build/libs/elytrapro-1.3.0.jar`. Requires JDK 17.
+Output: `build/libs/elytrapro-1.4.0.jar`. Requires JDK 17.
 GitHub Actions builds on every push and uploads the JAR as artifact `elytrapro-jar`.
 
 ## Config
 `.minecraft/config/elytrapro.json` (created on first launch; old configs are reset once on update to v1.1.0):
-`autoFirework`, `autoElytra`, `keepOpen`, `launchFromGround`, `cooldownTicks`, `skipIfBoosting`, `minAirTicks`, `retryDelayTicks`, `onlyWhenFalling`, `launchInsideCobweb`, `triggerWithBlockInHand`, `triggerBlockTags`, `triggerBlocks`.
+`autoFirework`, `autoElytra`, `launchFromGround`, `cooldownTicks`, `skipIfBoosting`, `minAirTicks`, `onlyWhenFalling`, `launchInsideCobweb`, `triggerWithBlockInHand`, `triggerBlockTags`, `triggerBlocks`.
 
 ## Server rules
 Automation mods may be forbidden on some servers. Check the rules before use.

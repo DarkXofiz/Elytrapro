@@ -6,25 +6,21 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 
 public final class AutoElytra {
-    private static final int REOPEN_WINDOW = 60;
-    private static final int MAX_REOPENS = 12;
-
     private static int airTicks;
-    private static int sinceAttempt = 1000;
-    private static int recentGlide;
-    private static int glideTicks;
-    private static int reopens;
     private static boolean attemptedThisPress;
 
     private AutoElytra() {}
 
-    /** Runs every client tick. Never sends a "stop gliding" packet. */
+    /**
+     * Runs every client tick. Opens the wings ONE time per space press (no retries,
+     * no packet spam) and never sends a "stop gliding" packet.
+     */
     public static void tick(MinecraftClient mc) {
         ClientPlayerEntity p = mc.player;
         ElytraProConfig cfg = ElytraProConfig.get();
-        if (p == null || mc.world == null) { reset(); return; }
+        if (p == null || mc.world == null) { airTicks = 0; attemptedThisPress = false; return; }
 
-        // queued "take off + rocket" from a right click on a trigger block
+        // queued "take off + rocket" from a right click
         AutoFirework.tick(mc);
 
         if (!cfg.autoElytra) return;
@@ -32,46 +28,19 @@ public final class AutoElytra {
         boolean jump = mc.options.jumpKey.isPressed() && mc.currentScreen == null;
         if (!jump) attemptedThisPress = false;
 
-        if (p.isOnGround() || p.isTouchingWater()) {
-            airTicks = 0;
-            recentGlide = 0;
-            reopens = 0;
-        } else {
-            airTicks++;
-        }
-        sinceAttempt++;
+        airTicks = (p.isOnGround() || p.isTouchingWater()) ? 0 : airTicks + 1;
 
         if (p.isFallFlying()) {
-            recentGlide = REOPEN_WINDOW;
-            if (++glideTicks >= 10) reopens = 0;
-            return;
-        }
-        glideTicks = 0;
-        if (recentGlide > 0) recentGlide--;
-
-        // Inside a cobweb: open ONCE per space press, never retry, never auto re-open.
-        // (Retrying every few ticks is what made the wings open/close/open/close.)
-        if (ElytraUtil.inCobweb(p)) {
-            if (!jump || attemptedThisPress) return;
-            if (!ElytraUtil.canStartNow(p)) return; // wait (same press) until airborne
-            attemptedThisPress = true;
-            ElytraUtil.tryStartGliding(p);
+            // wings are open (by us or by vanilla): this press is done
+            if (jump) attemptedThisPress = true;
             return;
         }
 
-        boolean keepOpen = cfg.keepOpen && recentGlide > 0 && reopens < MAX_REOPENS;
-        if (!jump && !keepOpen) return;
-        if (airTicks < cfg.minAirTicks || sinceAttempt < cfg.retryDelayTicks) return;
+        if (!jump || attemptedThisPress) return;
+        if (airTicks < cfg.minAirTicks) return;
+        if (!ElytraUtil.canStartNow(p)) return; // still on the ground: wait inside the same press
 
-        sinceAttempt = 0;
-        if (ElytraUtil.tryStartGliding(p) && !jump) reopens++;
-    }
-
-    private static void reset() {
-        airTicks = 0;
-        recentGlide = 0;
-        glideTicks = 0;
-        reopens = 0;
-        attemptedThisPress = false;
+        attemptedThisPress = true; // exactly one attempt per press
+        ElytraUtil.tryStartGliding(p);
     }
 }
