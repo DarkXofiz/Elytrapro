@@ -12,7 +12,7 @@ public final class AutoElytra {
     private AutoElytra() {}
 
     /**
-     * Runs every client tick. Opens the wings ONE time per space press (no retries,
+     * Runs every client tick. Inside a cobweb only: opens the wings ONE time per space press (no retries,
      * no packet spam) and never sends a "stop gliding" packet.
      */
     public static void tick(MinecraftClient mc) {
@@ -35,6 +35,9 @@ public final class AutoElytra {
             if (jump) attemptedThisPress = true;
             return;
         }
+
+        // Only inside a cobweb. Everywhere else space stays vanilla.
+        if (!ElytraUtil.inCobweb(p)) return;
 
         if (!jump || attemptedThisPress) return;
         if (airTicks < cfg.minAirTicks) return;

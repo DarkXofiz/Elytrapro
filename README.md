@@ -9,8 +9,9 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 - Already gliding: rocket at once. In the air: wings open + rocket in the same tick. On the ground (`launchFromGround`): you jump, then wings open and the rocket fires.
 - Never while sneaking, has a cooldown, skips if a rocket is still boosting you. A block in the main hand = vanilla placement (`triggerWithBlockInHand` changes that).
 
-**Auto Elytra**
-- Press jump in the air: Elytra opens ONE time per press. No retries, no packet spam, no automatic re-open. Press again to open again.
+**Auto Elytra (cobweb only)**
+- Press jump while standing inside a cobweb: Elytra opens ONE time per press (waits inside the same press until you are airborne). No retries, no packet spam, no automatic re-open.
+- Everywhere else space is completely vanilla.
 - The server can still close wings (ground contact, water, anti-cheat). The client cannot override that.
 
 ## Install
@@ -22,7 +23,7 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 gradle wrapper --gradle-version 8.8   # once, creates gradle-wrapper.jar
 ./gradlew build                        # Windows: gradlew.bat build
 ```
-Output: `build/libs/elytrapro-1.4.0.jar`. Requires JDK 17.
+Output: `build/libs/elytrapro-1.5.0.jar`. Requires JDK 17.
 GitHub Actions builds on every push and uploads the JAR as artifact `elytrapro-jar`.
 
 ## Config
