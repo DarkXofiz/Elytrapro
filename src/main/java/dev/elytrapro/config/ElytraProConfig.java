@@ -25,7 +25,7 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
-    private static final int CONFIG_VERSION = 5;
+    private static final int CONFIG_VERSION = 6;
 
     /** Old config files are reset once so the new defaults take effect. */
     public int configVersion; // 0 when missing in an old file
@@ -39,8 +39,8 @@ public final class ElytraProConfig {
     public boolean skipIfBoosting = true;
     /** Ticks in the air (jump held) before Elytra opens. */
     public int minAirTicks = 0;
-    /** Only try to open wings when moving downwards (older server rule). Off = open instantly. */
-    public boolean onlyWhenFalling = false;
+    /** Only try to open wings when moving downwards (older server rule). On (default) = only when falling, accepted by all servers. */
+    public boolean onlyWhenFalling = true;
     /** Right click while standing inside a cobweb launches you (any crosshair target). */
     public boolean launchInsideCobweb = true;
     /** If false, right click with a block in hand always places the block (vanilla). */
