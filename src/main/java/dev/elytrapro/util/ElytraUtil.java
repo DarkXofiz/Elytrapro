@@ -37,7 +37,11 @@ public final class ElytraUtil {
             return false;
         }
         if (ElytraProConfig.get().onlyWhenFalling && !inCobweb(p)) {
-            return p.getVelocity().y < 0.0;
+            // Right after a jump the player is still rising for a few ticks; only
+            // require "falling" once the ascent is basically over, so we don't sit
+            // in the pending window until the jump's apex (the bug that made ground
+            // launches silently do nothing on many servers).
+            return p.getVelocity().y < 0.05;
         }
         return true;
     }
