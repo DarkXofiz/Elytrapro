@@ -17,6 +17,7 @@ import net.minecraft.item.SwordItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.UseAction;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -38,9 +39,9 @@ public final class AutoFirework {
      * by the mod. The rocket decides everything:
      *  - no firework rocket in the hand that the click would use => always vanilla (eating, drinking,
      *    blocking, placing blocks, bows and so on are never touched)
-     *  - rocket in the main hand => trigger
+     *  - rocket in the main hand => trigger, unless the off hand holds food, a drink or a bow
      *  - rocket in the off hand => trigger only if the main hand is empty, a sword or a pickaxe
-     *    (food, potions, shields, bows, tools with a block use and so on keep working)
+     *    (food, potions, bows, tools with a block use and so on keep working)
      * With a rocket in hand the click is consumed only when you are inside a cobweb, look at a placed
      * trigger block (logs, planks, cobweb, bedrock) or look at another player.
      */
@@ -125,13 +126,16 @@ public final class AutoFirework {
     }
 
     /**
-     * The hand whose rocket the click would use, or null. Main hand rocket always counts. Off hand
-     * rocket counts only when the main hand item does not react to a right click on its own.
+     * The hand whose rocket the click would use, or null. The rocket must be in one hand AND the other
+     * hand must not react to a right click on its own, so both hands behave the same:
+     *  - rocket in the main hand: off hand must not hold food or a drink (otherwise vanilla eating wins)
+     *  - rocket in the off hand: main hand must be empty, a sword or a pickaxe
      */
     private static Hand findTriggerHand(ClientPlayerEntity p) {
         ItemStack main = p.getMainHandStack();
-        if (main.isOf(Items.FIREWORK_ROCKET)) return Hand.MAIN_HAND;
-        if (p.getOffHandStack().isOf(Items.FIREWORK_ROCKET) && mainHandLeavesClickFree(main)) return Hand.OFF_HAND;
+        ItemStack off = p.getOffHandStack();
+        if (main.isOf(Items.FIREWORK_ROCKET)) return offHandUsesClick(off) ? null : Hand.MAIN_HAND;
+        if (off.isOf(Items.FIREWORK_ROCKET) && mainHandLeavesClickFree(main)) return Hand.OFF_HAND;
         return null;
     }
 
@@ -140,6 +144,14 @@ public final class AutoFirework {
         if (s.isEmpty()) return true;
         Item item = s.getItem();
         return item instanceof SwordItem || item instanceof PickaxeItem;
+    }
+
+    /** Food, drinks, bows and similar in the off hand: the click belongs to them (shield is ignored). */
+    private static boolean offHandUsesClick(ItemStack s) {
+        if (s.isEmpty()) return false;
+        if (s.getItem().isFood()) return true;
+        UseAction a = s.getUseAction();
+        return a != UseAction.NONE && a != UseAction.BLOCK;
     }
 
     /**
