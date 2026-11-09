@@ -4,8 +4,8 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 
 ## Features
 **Auto Firework**
-- Works ONLY while a firework rocket is in your main hand or off hand. Without a rocket in hand (or with any other item) nothing happens and everything stays vanilla. Rockets are never taken from the hotbar.
-- With a rocket in hand, right-click an already **placed** log / planks / cobweb / bedrock block, or right-click anywhere while standing inside a cobweb (`launchInsideCobweb`): you take off with the rocket.
+- Works ONLY while a firework rocket is in your main hand or off hand. Without a rocket in hand nothing happens and everything stays vanilla. Rockets are never taken from the hotbar.
+- With a rocket in hand, right-click an already **placed** log / planks / cobweb / bedrock block, right-click anywhere while standing inside a cobweb (`launchInsideCobweb`), or **right-click another player**: you take off with the rocket. Always on, no key needed.
 - Already gliding: rocket at once. In the air: wings open + rocket in the same tick. On the ground (`launchFromGround`): you jump, then wings open and the rocket fires.
 - Never while sneaking, has a cooldown, skips if a rocket is still boosting you. A block in the main hand = vanilla placement (`triggerWithBlockInHand` changes that).
 
@@ -29,7 +29,7 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 gradle wrapper --gradle-version 8.8   # once, creates gradle-wrapper.jar
 ./gradlew build                        # Windows: gradlew.bat build
 ```
-Output: `build/libs/elytrapro-1.8.0.jar`. Requires JDK 17.
+Output: `build/libs/elytrapro-1.9.0.jar`. Requires JDK 17.
 GitHub Actions builds on every push and uploads the JAR as artifact `elytrapro-jar`.
 
 ## Config

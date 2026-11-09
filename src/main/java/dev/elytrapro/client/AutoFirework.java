@@ -12,7 +12,9 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Vec3d;
 
@@ -27,8 +29,9 @@ public final class AutoFirework {
 
     /**
      * Called when the right-click key is processed. Returns true only when the
-     * click is consumed by the mod. That happens ONLY when you are inside a cobweb
-     * or the crosshair is on an already placed trigger BLOCK (logs, planks, cobweb, bedrock).
+     * click is consumed by the mod. That happens ONLY when you are inside a cobweb,
+     * the crosshair is on an already placed trigger BLOCK (logs, planks, cobweb, bedrock),
+     * or the crosshair is on another player.
      * Everything else (placing blocks, firework in hand, other blocks) stays vanilla.
      */
     public static boolean tryUse(MinecraftClient mc) {
@@ -37,12 +40,14 @@ public final class AutoFirework {
         if (!cfg.autoFirework || p == null || mc.world == null || mc.interactionManager == null) return false;
         if (p.isSpectator() || p.isSneaking() || p.hasVehicle()) return false;
 
-        // 1) trigger: standing inside a cobweb, OR looking at a placed trigger block
+        // 1) trigger: standing inside a cobweb, looking at a placed trigger block, or looking at a player
         boolean inWeb = cfg.launchInsideCobweb && ElytraUtil.inCobweb(p);
         boolean onTriggerBlock = mc.crosshairTarget instanceof BlockHitResult hit
                 && hit.getType() == HitResult.Type.BLOCK
                 && cfg.isTriggerBlock(mc.world.getBlockState(hit.getBlockPos()));
-        if (!inWeb && !onTriggerBlock) return false;
+        boolean onPlayer = mc.crosshairTarget instanceof EntityHitResult eh
+                && eh.getEntity() instanceof PlayerEntity target && target != p;
+        if (!inWeb && !onTriggerBlock && !onPlayer) return false;
 
         // 2) holding a block => the player wants to place it, stay vanilla
         if (!cfg.triggerWithBlockInHand && p.getMainHandStack().getItem() instanceof BlockItem) return false;
