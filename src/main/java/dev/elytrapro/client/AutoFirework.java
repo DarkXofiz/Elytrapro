@@ -4,7 +4,6 @@ import dev.elytrapro.config.ElytraProConfig;
 import dev.elytrapro.util.ElytraUtil;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -14,7 +13,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
 
 public final class AutoFirework {
     private static final int PENDING_TICKS = 40;
@@ -28,14 +26,14 @@ public final class AutoFirework {
     /**
      * Called when the right-click key is processed. Returns true only when the
      * click is consumed by the mod. That happens ONLY when you are inside a cobweb
-     * or the crosshair is on an already placed trigger BLOCK (logs, planks, cobweb, bedrock).
+     * or the crosshair is on an already placed trigger BLOCK (see triggerBlocks and triggerBlockTags).
      * Everything else (placing blocks, firework in hand, other blocks) stays vanilla.
      */
     public static boolean tryUse(MinecraftClient mc) {
         ClientPlayerEntity p = mc.player;
         ElytraProConfig cfg = ElytraProConfig.get();
         if (!cfg.autoFirework || p == null || mc.world == null || mc.interactionManager == null) return false;
-        if (p.isSpectator() || p.isSneaking() || p.hasVehicle()) return false;
+        if (p.isSpectator() || p.hasVehicle()) return false;
 
         // 1) trigger: standing inside a cobweb, OR looking at a placed trigger block
         boolean inWeb = cfg.launchInsideCobweb && ElytraUtil.inCobweb(p);
@@ -43,6 +41,10 @@ public final class AutoFirework {
                 && hit.getType() == HitResult.Type.BLOCK
                 && cfg.isTriggerBlock(mc.world.getBlockState(hit.getBlockPos()));
         if (!inWeb && !onTriggerBlock) return false;
+
+        // Shift never blocks the rocket inside a cobweb or while gliding.
+        // Elsewhere it only blocks when allowWhileSneaking is off.
+        if (p.isSneaking() && !cfg.allowWhileSneaking && !inWeb && !p.isFallFlying()) return false;
 
         // 2) holding a block => the player wants to place it, stay vanilla
         if (!cfg.triggerWithBlockInHand && p.getMainHandStack().getItem() instanceof BlockItem) return false;
@@ -67,11 +69,7 @@ public final class AutoFirework {
         // on the ground: jump, then open wings + fire when the server will accept it
         if (p.isOnGround()) {
             if (!cfg.launchFromGround) return false;
-            double jump = 0.42;
-            StatusEffectInstance boost = p.getStatusEffect(StatusEffects.JUMP_BOOST);
-            if (boost != null) jump += 0.1 * (boost.getAmplifier() + 1);
-            Vec3d v = p.getVelocity();
-            p.setVelocity(v.x, Math.max(v.y, jump), v.z);
+            ElytraUtil.hop(p);
             pending = PENDING_TICKS;
             return true;
         }

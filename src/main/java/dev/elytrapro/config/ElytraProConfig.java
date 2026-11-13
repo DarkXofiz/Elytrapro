@@ -25,7 +25,7 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
-    private static final int CONFIG_VERSION = 7;
+    private static final int CONFIG_VERSION = 8;
 
     /** Old config files are reset once so the new defaults take effect. */
     public int configVersion; // 0 when missing in an old file
@@ -41,13 +41,24 @@ public final class ElytraProConfig {
     public int minAirTicks = 0;
     /** Only try to open wings when moving downwards (older server rule). Off (default) = open instantly. On = only when falling (use if a server rejects instant open). */
     public boolean onlyWhenFalling = false;
+    /** Key that opens the wings inside a cobweb: SNEAK (Shift), JUMP or BOTH. */
+    public String cobwebOpenKey = "SNEAK";
+    /** Inside a cobweb on the ground: one small hop so the wings can open. */
+    public boolean cobwebHop = true;
+    /** If true, Shift does not stop the rocket launch on trigger blocks. */
+    public boolean allowWhileSneaking = true;
     /** Right click while standing inside a cobweb launches you (any crosshair target). */
     public boolean launchInsideCobweb = true;
     /** If false, right click with a block in hand always places the block (vanilla). */
     public boolean triggerWithBlockInHand = false;
     /** PLACED blocks that launch you when you right-click them. */
-    public List<String> triggerBlockTags = List.of("minecraft:logs", "minecraft:planks");
-    public List<String> triggerBlocks = List.of("minecraft:cobweb", "minecraft:bedrock");
+    public List<String> triggerBlockTags = List.of(
+            "minecraft:logs", "minecraft:planks", "minecraft:wooden_slabs", "minecraft:wooden_stairs",
+            "minecraft:wooden_fences", "minecraft:base_stone_overworld", "minecraft:dirt", "minecraft:sand",
+            "minecraft:leaves");
+    public List<String> triggerBlocks = List.of(
+            "minecraft:cobweb", "minecraft:bedrock", "minecraft:obsidian", "minecraft:netherrack",
+            "minecraft:cobblestone", "minecraft:end_stone");
 
     private transient Set<Block> resolvedBlocks;
     private transient List<TagKey<Block>> resolvedTags;
@@ -82,6 +93,7 @@ public final class ElytraProConfig {
         }
         cfg.cooldownTicks = Math.max(0, cfg.cooldownTicks);
         cfg.minAirTicks = Math.max(0, cfg.minAirTicks);
+        if (cfg.cobwebOpenKey == null) cfg.cobwebOpenKey = "SNEAK";
         if (cfg.triggerBlockTags == null) cfg.triggerBlockTags = List.of();
         if (cfg.triggerBlocks == null) cfg.triggerBlocks = List.of();
         return cfg;
