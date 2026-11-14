@@ -65,7 +65,7 @@ public final class AutoElytra {
         if (opened) {
             playSound(mc, p, SoundEvents.ITEM_ARMOR_EQUIP_ELYTRA, 1.6F);
         } else {
-            playSound(mc, p, SoundEvents.BLOCK_NOTE_BLOCK_BASS, 0.8F);
+            playSound(mc, p, SoundEvents.BLOCK_NOTE_BLOCK_BASS.value(), 0.8F);
         }
     }
 
