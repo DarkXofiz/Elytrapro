@@ -38,6 +38,9 @@ public final class AutoFlyHit {
     private static long lastJump = Long.MIN_VALUE / 2;
     private static int ticks;
     private static int lostSight;
+    // smoothed target velocity: raw per-tick delta is too noisy (strafing/jumping
+    // makes it jump every frame) and caused the stutter. Exponential smoothing fixes it.
+    private static Vec3d smoothedTargetVel = Vec3d.ZERO;
 
     private AutoFlyHit() {}
 
@@ -65,6 +68,7 @@ public final class AutoFlyHit {
         if (target == null && ticks % SCAN_INTERVAL == 0) {
             target = pick(mc, p, cfg);
             lostSight = 0;
+            smoothedTargetVel = Vec3d.ZERO;
         }
         if (target == null) {
             release(mc);
@@ -179,19 +183,30 @@ public final class AutoFlyHit {
 
     private static void steer(ClientPlayerEntity p, PlayerEntity t, double dist, ElytraProConfig cfg) {
         Vec3d eye = p.getEyePos();
-        Vec3d vel = new Vec3d(t.getX() - t.prevX, t.getY() - t.prevY, t.getZ() - t.prevZ);
+
+        // smooth the target's velocity (raw per-tick delta is jittery) before using it to lead
+        Vec3d rawVel = new Vec3d(t.getX() - t.prevX, t.getY() - t.prevY, t.getZ() - t.prevZ);
+        smoothedTargetVel = smoothedTargetVel.multiply(0.75).add(rawVel.multiply(0.25));
+
         double speed = Math.max(0.6, p.getVelocity().length());
-        double lead = Math.min(8.0, dist / speed);
-        Vec3d aim = t.getPos().add(0.0, t.getHeight() * 0.55, 0.0).add(vel.multiply(lead));
+        double lead = MathHelper.clamp(dist / speed, 0.0, 6.0);
+        Vec3d aim = t.getPos().add(0.0, t.getHeight() * 0.55, 0.0).add(smoothedTargetVel.multiply(lead));
 
         double dx = aim.x - eye.x;
         double dy = aim.y - eye.y;
         double dz = aim.z - eye.z;
         float wantYaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
         float wantPitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
-        float step = cfg.flyHitTurnSpeed;
-        float yaw = p.getYaw() + MathHelper.clamp(MathHelper.wrapDegrees(wantYaw - p.getYaw()), -step, step);
-        float pitch = MathHelper.clamp(p.getPitch() + MathHelper.clamp(wantPitch - p.getPitch(), -step, step), -90.0F, 90.0F);
+
+        // turn speed scales with how far off-target we are: fast when the angle is big
+        // (closing in), gentle near zero error (no overshoot/oscillation close up).
+        float yawErr = MathHelper.wrapDegrees(wantYaw - p.getYaw());
+        float pitchErr = wantPitch - p.getPitch();
+        float yawStep = MathHelper.clamp(Math.abs(yawErr) * 0.35F, 1.0F, cfg.flyHitTurnSpeed);
+        float pitchStep = MathHelper.clamp(Math.abs(pitchErr) * 0.35F, 1.0F, cfg.flyHitTurnSpeed);
+
+        float yaw = p.getYaw() + MathHelper.clamp(yawErr, -yawStep, yawStep);
+        float pitch = MathHelper.clamp(p.getPitch() + MathHelper.clamp(pitchErr, -pitchStep, pitchStep), -90.0F, 90.0F);
         p.setYaw(yaw);
         p.setPitch(pitch);
     }
@@ -243,6 +258,7 @@ public final class AutoFlyHit {
     private static void release(MinecraftClient mc) {
         target = null;
         lostSight = 0;
+        smoothedTargetVel = Vec3d.ZERO;
         if (returnSlot >= 0 && mc != null && mc.player != null) {
             mc.player.getInventory().selectedSlot = returnSlot;
         }

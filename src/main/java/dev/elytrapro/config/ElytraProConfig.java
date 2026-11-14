@@ -43,10 +43,6 @@ public final class ElytraProConfig {
     public boolean onlyWhenFalling = false;
     /** Right click while standing inside a cobweb launches you (any crosshair target). */
     public boolean launchInsideCobweb = true;
-    /** Rocket in hand + right click while looking at another player launches you. */
-    public boolean triggerOnPlayer = true;
-    /** How far away (blocks) a player may be for the player trigger. Vanilla reach is only about 3. */
-    public double playerTriggerRange = 40.0;
     /** If false, right click with a block in hand always places the block (vanilla). */
     public boolean triggerWithBlockInHand = false;
     /** PLACED blocks that launch you when you right-click them. */
@@ -108,7 +104,6 @@ public final class ElytraProConfig {
         }
         cfg.cooldownTicks = Math.max(0, cfg.cooldownTicks);
         cfg.minAirTicks = Math.max(0, cfg.minAirTicks);
-        cfg.playerTriggerRange = Math.max(0.0, Math.min(128.0, cfg.playerTriggerRange));
         if (cfg.triggerBlockTags == null) cfg.triggerBlockTags = List.of();
         if (cfg.triggerBlocks == null) cfg.triggerBlocks = List.of();
         if (cfg.flyHitIgnoreNames == null) cfg.flyHitIgnoreNames = new ArrayList<>();

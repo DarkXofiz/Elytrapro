@@ -4,9 +4,8 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 
 ## Features
 **Auto Firework**
-- Works ONLY while a firework rocket is in your hand. Without a rocket in hand nothing happens and everything stays vanilla (eating, drinking, blocking, placing blocks). Rockets are never taken from the hotbar.
-- Both hands follow the same rule: the other hand must not react to a right click. Rocket in the main hand works unless the off hand holds food, a drink or a bow. Rocket in the off hand works only if the main hand is empty, a sword or a pickaxe. So eating and drinking always stay vanilla.
-- With a rocket in hand, right-click an already **placed** log / planks / cobweb / bedrock block, right-click anywhere while standing inside a cobweb (`launchInsideCobweb`), or **right-click another player** (up to `playerTriggerRange` blocks away, first block in the way stops the ray; `triggerOnPlayer` turns it off): you take off with the rocket. Always on, no key needed.
+- Works ONLY while a firework rocket is in your main hand or off hand. Without a rocket in hand nothing happens and everything stays vanilla. Rockets are never taken from the hotbar.
+- With a rocket in hand, right-click an already **placed** log / planks / cobweb / bedrock block, right-click anywhere while standing inside a cobweb (`launchInsideCobweb`), or **right-click another player**: you take off with the rocket. Always on, no key needed.
 - Already gliding: rocket at once. In the air: wings open + rocket in the same tick. On the ground (`launchFromGround`): you jump, then wings open and the rocket fires.
 - Never while sneaking, has a cooldown, skips if a rocket is still boosting you. A block in the main hand = vanilla placement (`triggerWithBlockInHand` changes that).
 
@@ -30,13 +29,13 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 gradle wrapper --gradle-version 8.8   # once, creates gradle-wrapper.jar
 ./gradlew build                        # Windows: gradlew.bat build
 ```
-Output: `build/libs/elytrapro-1.9.2.jar`. Requires JDK 17.
+Output: `build/libs/elytrapro-1.11.0.jar`. Requires JDK 17.
 GitHub Actions builds on every push and uploads the JAR as artifact `elytrapro-jar`.
 
 ## Config
 `.minecraft/config/elytrapro.json` (created on first launch; old configs are reset once on update to v1.1.0):
 `flyHit`, `flyHitHealth`, `flyHitRange`, `flyHitReach`, `flyHitMinCooldown`, `flyHitTurnSpeed`, `flyHitUseRockets`, `flyHitRocketCooldown`, `flyHitMinSpeed`, `flyHitRocketMinDistance`, `flyHitNeedLineOfSight`, `flyHitIgnoreNames`,
-`autoFirework`, `autoElytra`, `launchFromGround`, `cooldownTicks`, `skipIfBoosting`, `minAirTicks`, `onlyWhenFalling`, `launchInsideCobweb`, `triggerOnPlayer`, `playerTriggerRange`, `triggerWithBlockInHand`, `triggerBlockTags`, `triggerBlocks`.
+`autoFirework`, `autoElytra`, `launchFromGround`, `cooldownTicks`, `skipIfBoosting`, `minAirTicks`, `onlyWhenFalling`, `launchInsideCobweb`, `triggerWithBlockInHand`, `triggerBlockTags`, `triggerBlocks`.
 
 ## Server rules
 Automation mods may be forbidden on some servers. Check the rules before use.

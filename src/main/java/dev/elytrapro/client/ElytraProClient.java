@@ -16,11 +16,14 @@ public final class ElytraProClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static KeyBinding flyHitKey;
+    private static KeyBinding webEscapeHitKey;
 
     @Override
     public void onInitializeClient() {
         flyHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.elytrapro.flyhit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.elytrapro"));
+        webEscapeHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.elytrapro.webescapehit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.categories.elytrapro"));
 
         ClientTickEvents.END_CLIENT_TICK.register(AutoElytra::tick);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -34,6 +37,15 @@ public final class ElytraProClient implements ClientModInitializer {
                 AutoFlyHit.tick(client);
             } catch (Throwable t) {
                 LOGGER.error("Fly Hit error", t);
+            }
+            // Left Alt arms a one-shot: next web-escape glide-start fires a rocket + one sweeping-sword hit.
+            if (webEscapeHitKey.wasPressed()) {
+                AutoWebEscapeHit.arm();
+            }
+            try {
+                AutoWebEscapeHit.tick(client);
+            } catch (Throwable t) {
+                LOGGER.error("Web Escape Hit error", t);
             }
         });
     }
