@@ -38,8 +38,10 @@ public final class ElytraProClient implements ClientModInitializer {
             } catch (Throwable t) {
                 LOGGER.error("Fly Hit error", t);
             }
-            // Left Alt arms a one-shot: next web-escape glide-start fires a rocket + one sweeping-sword hit.
-            if (webEscapeHitKey.wasPressed()) {
+            // Arms a one-shot: next web-escape glide-start fires a rocket + one sweeping-item hit.
+            // wasPressed() must be drained with `while`, not `if` - Fabric queues presses per tick
+            // and a lone `if` can leave the queue non-empty, causing missed or delayed triggers.
+            while (webEscapeHitKey.wasPressed()) {
                 AutoWebEscapeHit.arm();
             }
             try {
