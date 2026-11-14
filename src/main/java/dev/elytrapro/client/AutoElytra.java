@@ -62,11 +62,16 @@ public final class AutoElytra {
 
     private static void announce(MinecraftClient mc, ClientPlayerEntity p, boolean opened) {
         p.sendMessage(Text.literal(opened ? "Açıldı" : "Kapandı"), true); // actionbar, not chat
-        net.minecraft.sound.SoundEvent sound = opened
-                ? SoundEvents.ITEM_ARMOR_EQUIP_ELYTRA.value()
-                : SoundEvents.BLOCK_NOTE_BLOCK_BASS.value();
+        if (opened) {
+            playSound(mc, p, SoundEvents.ITEM_ARMOR_EQUIP_ELYTRA, 1.6F);
+        } else {
+            playSound(mc, p, SoundEvents.BLOCK_NOTE_BLOCK_BASS, 0.8F);
+        }
+    }
+
+    private static void playSound(MinecraftClient mc, ClientPlayerEntity p, net.minecraft.sound.SoundEvent sound, float pitch) {
         mc.getSoundManager().play(new net.minecraft.client.sound.PositionedSoundInstance(
-                sound, SoundCategory.PLAYERS, 1.0F, opened ? 1.6F : 0.8F,
+                sound, SoundCategory.PLAYERS, 1.0F, pitch,
                 p.getRandom(), p.getX(), p.getY(), p.getZ()));
     }
 }
