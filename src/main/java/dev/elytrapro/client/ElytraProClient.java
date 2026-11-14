@@ -23,7 +23,7 @@ public final class ElytraProClient implements ClientModInitializer {
         flyHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.elytrapro.flyhit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.elytrapro"));
         webEscapeHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.elytrapro.webescapehit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.categories.elytrapro"));
+                "key.elytrapro.webescapehit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_1, "key.categories.elytrapro"));
 
         ClientTickEvents.END_CLIENT_TICK.register(AutoElytra::tick);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

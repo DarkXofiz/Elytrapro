@@ -25,7 +25,7 @@ public final class ElytraProConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ElytraProConfig instance;
 
-    private static final int CONFIG_VERSION = 9;
+    private static final int CONFIG_VERSION = 10;
 
     /** Old config files are reset once so the new defaults take effect. */
     public int configVersion; // 0 when missing in an old file

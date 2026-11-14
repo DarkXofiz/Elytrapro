@@ -29,7 +29,7 @@ Client-side **Fabric** mod for **Minecraft 1.20.1** (and compatible 1.20.x build
 gradle wrapper --gradle-version 8.8   # once, creates gradle-wrapper.jar
 ./gradlew build                        # Windows: gradlew.bat build
 ```
-Output: `build/libs/elytrapro-1.11.0.jar`. Requires JDK 17.
+Output: `build/libs/elytrapro-1.12.0.jar`. Requires JDK 17.
 GitHub Actions builds on every push and uploads the JAR as artifact `elytrapro-jar`.
 
 ## Config
