@@ -55,9 +55,7 @@ public final class AutoElytra {
         if (!ElytraUtil.canStartNow(p)) return; // still on the ground: wait inside the same press
 
         attemptedThisPress = true; // exactly one attempt per press
-        if (ElytraUtil.tryStartGliding(p)) {
-            AutoWebEscapeHit.onWebEscapeGlideStart(mc);
-        }
+        ElytraUtil.tryStartGliding(p);
     }
 
     private static void announce(MinecraftClient mc, ClientPlayerEntity p, boolean opened) {

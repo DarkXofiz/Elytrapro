@@ -16,14 +16,11 @@ public final class ElytraProClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     private static KeyBinding flyHitKey;
-    private static KeyBinding webEscapeHitKey;
 
     @Override
     public void onInitializeClient() {
         flyHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.elytrapro.flyhit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.categories.elytrapro"));
-        webEscapeHitKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.elytrapro.webescapehit", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_KP_1, "key.categories.elytrapro"));
 
         ClientTickEvents.END_CLIENT_TICK.register(AutoElytra::tick);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -37,17 +34,6 @@ public final class ElytraProClient implements ClientModInitializer {
                 AutoFlyHit.tick(client);
             } catch (Throwable t) {
                 LOGGER.error("Fly Hit error", t);
-            }
-            // Arms a one-shot: next web-escape glide-start fires a rocket + one sweeping-item hit.
-            // wasPressed() must be drained with `while`, not `if` - Fabric queues presses per tick
-            // and a lone `if` can leave the queue non-empty, causing missed or delayed triggers.
-            while (webEscapeHitKey.wasPressed()) {
-                AutoWebEscapeHit.arm();
-            }
-            try {
-                AutoWebEscapeHit.tick(client);
-            } catch (Throwable t) {
-                LOGGER.error("Web Escape Hit error", t);
             }
         });
     }
